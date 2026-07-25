@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>需求與請假管理系統</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f4f6f9; margin: 20px; }
+        .container { max-width: 800px; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        h2 { color: #333; margin-top: 0; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; }
+        input, select, textarea { width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; }
+        button { background: #007bff; color: white; padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
+        th { background: #f8f9fa; }
+        .badge { padding: 4px 8px; border-radius: 4px; color: #fff; font-size: 12px; }
+        .bg-pending { background: #ffc107; color: #000; }
+        .bg-notice { background: #17a2b8; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>提交新需求 / 學生請假通知</h2>
+    <form id="requestForm">
+        <div class="form-group">
+            <label for="type">需求類型 (Type):</label>
+            <select id="type" onchange="toggleFormType()">
+                <option value="Task">Task / 一般維修或需求</option>
+                <option value="Notice">Notice / 學生請假通知</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="title">標題或主旨 (Title):</label>
+            <input type="text" id="title" placeholder="例如：302 教室投影機故障 或 病假" required>
+        </div>
+
+        <!-- 請假專用動態欄位 -->
+        <div id="noticeFields" style="display: none;">
+            <div class="form-group">
+                <label for="absence_date">請假日期 (Absence Date):</label>
+                <input type="date" id="absence_date" value="2026-08-10">
+            </div>
+            <div class="form-group">
+                <label for="period">請假節次 (Class Period):</label>
+                <select id="period">
+                    <option value="1">第一節 Period 1 (08:00 - 08:50)</option>
+                    <option value="2">第二節 Period 2 (09:00 - 09:50)</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="priority">優先程度 (Priority):</label>
+            <select id="priority">
+                <option value="Low">Low (低)</option>
+                <option value="Medium" selected>Medium (中)</option>
+                <option value="High">High (高)</option>
+                <option value="Urgent">Urgent (緊急)</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="description">詳細說明 (Description):</label>
+            <textarea id="description" rows="3" placeholder="請輸入詳細描述..."></textarea>
+        </div>
+
+        <button type="submit">送出申請 (Submit)</button>
+    </form>
+</div>
+
+<div class="container">
+    <h2>工單列表 Dashboard</h2>
+    <button onclick="loadTickets()">重新整理列表</button>
+    <table>
+        <thead>
+            <tr>
+                <th>工單編號</th>
+                <th>類型</th>
+                <th>標題</th>
+                <th>申請人</th>
+                <th>狀態</th>
+                <th>建立時間</th>
+            </tr>
+        </thead>
+        <tbody id="ticketList">
+            <!-- 資料會由 JavaScript 動態寫入 -->
+        </tbody>
+    </table>
+</div>
+
+<script>
+    function toggleFormType() {
+        const type = document.getElementById('type').value;
+        const noticeFields = document.getElementById('noticeFields');
+        noticeFields.style.display = (type === 'Notice') ? 'block' : 'none';
+    }
+
+    document.getElementById('requestForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        const payload = {
+            type: document.getElementById('type').value,
+            title: document.getElementById('title').value,
+            description: document.getElementById('description').value,
+            priority: document.getElementById('priority').value,
+            absence_date: document.getElementById('absence_date').value,
+            period: document.getElementById('period').value,
+            requester_id: 1
+        };
+
+        fetch('api.php?action=create_request', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        })
+        .then(res => res.json())
+        .then(data => {
+            alert(data.message);
+            if (data.status === 'success') {
+                document.getElementById('requestForm').reset();
+                toggleFormType();
+                loadTickets();
+            }
+        });
+    });
+
+    function loadTickets() {
+        fetch('api.php?action=get_requests')
+        .then(res => res.json())
+        .then(res => {
+            if (res.status === 'success') {
+                const tbody = document.getElementById('ticketList');
+                tbody.innerHTML = '';
+                res.data.forEach(item => {
+                    tbody.innerHTML += `
+                        <tr>
+                            <td><b>${item.ticket_no}</b></td>
+                            <td>${item.type}</td>
+                            <td>${item.title}</td>
+                            <td>${item.requester_name}</td>
+                            <td><span class="badge ${item.type === 'Notice' ? 'bg-notice' : 'bg-pending'}">${item.status}</span></td>
+                            <td>${item.created_at}</td>
+                        </tr>
+                    `;
+                });
+            }
+        });
+    }
+
+    loadTickets();
+</script>
+
+</body>
+</html>
