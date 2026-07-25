@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Language School - Login</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- Full Page Loading Overlay -->
+<div id="fullLoading" class="full-page-loading">
+    <div class="big-spinner"></div>
+</div>
+
+<div class="main-container">
+    <div class="login-card" id="card">
+
+        <!-- Error Message Alert Box -->
+        <div id="alertMsg" class="alert"></div>
+
+        <!-- Login Form -->
+        <form id="loginForm">
+            <div class="form-group">
+                <label for="userId">ID</label>
+                <input type="text" id="userId" placeholder="Enter Employee ID or Student ID" required autocomplete="username">
+            </div>
+
+            <button type="submit" class="btn-login" id="submitBtn">
+                <span id="btnText">Login</span>
+            </button>
+        </form>
+
+    </div>
+</div>
+
+<script>
+    const loginForm = document.getElementById('loginForm');
+    const alertMsg = document.getElementById('alertMsg');
+    const submitBtn = document.getElementById('submitBtn');
+    const btnText = document.getElementById('btnText');
+    const card = document.getElementById('card');
+    const fullLoading = document.getElementById('fullLoading');
+
+    loginForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        const userId = document.getElementById('userId').value.trim();
+
+        showAlert('', 'hide');
+        submitBtn.disabled = true;
+        btnText.innerHTML = '<span class="spinner"></span> Logging in...';
+
+        fetch('auth.php?action=login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: userId })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.status === 'success') {
+                fullLoading.classList.add('active');
+
+                setTimeout(() => {
+                    window.location.href = 'index.html';
+                }, 1000);
+
+            } else {
+                submitBtn.disabled = false;
+                btnText.innerText = 'Login';
+                showAlert(data.message || 'Invalid Employee ID or Student ID', 'danger');
+                
+                card.classList.remove('shake');
+                void card.offsetWidth;
+                card.classList.add('shake');
+            }
+        })
+        .catch(err => {
+            submitBtn.disabled = false;
+            btnText.innerText = 'Login';
+            showAlert('Connection error. Please try again later.', 'danger');
+        });
+    });
+
+    function showAlert(msg, type) {
+        if (type === 'hide') {
+            alertMsg.style.display = 'none';
+            return;
+        }
+        alertMsg.innerText = msg;
+        alertMsg.className = `alert alert-${type}`;
+        alertMsg.style.display = 'block';
+    }
+</script>
+
+</body>
+</html>

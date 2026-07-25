@@ -1,8 +1,10 @@
 <?php
 
+session_start(); // 1. 啟用 Session
+
 header('Content-Type: application/json; charset=utf-8');
 
-// 資料庫連線配置 (已設定為你的 winning 資料庫)
+// 資料庫連線配置
 $db_host = '127.0.0.1';
 $db_name = 'winning'; 
 $db_user = 'root';
@@ -53,7 +55,7 @@ switch ($action) {
             $schedule = $stmt->fetch();
 
             if (!$schedule) {
-                echo json_encode(['status' => 'error', 'message' => '選取的時間段查無對應授課老師！']);
+                echo json_encode(['status' => 'error', 'message' => 'No assigned teacher found for this period.']);
                 exit;
             }
 
@@ -67,7 +69,7 @@ switch ($action) {
             $insertStmt->execute([
                 ':ticket_no' => $ticket_no,
                 ':title' => $title,
-                ':description' => "請假日期: $absence_date (第 $period 節) - $description",
+                ':description' => "Absence Date: $absence_date (Period $period) - $description",
                 ':priority' => $priority,
                 ':status' => $status,
                 ':requester_id' => $requester_id,
@@ -76,7 +78,7 @@ switch ($action) {
 
             echo json_encode([
                 'status' => 'success', 
-                'message' => '請假通知已自動指派給對應老師！',
+                'message' => 'Leave request submitted successfully.',
                 'ticket_no' => $ticket_no,
                 'assigned_teacher_id' => $recipient_id
             ]);
@@ -99,7 +101,7 @@ switch ($action) {
 
             echo json_encode([
                 'status' => 'success', 
-                'message' => '維修/任務需求已送出審核！',
+                'message' => 'Task request submitted for approval.',
                 'ticket_no' => $ticket_no
             ]);
         }
@@ -116,7 +118,65 @@ switch ($action) {
         echo json_encode(['status' => 'success', 'data' => $requests]);
         break;
 
+    // 🔐 依據 Student_No / Emp_No 直接進行 ID 登入
+    case 'login':
+        $userId = trim($input['id'] ?? '');
+
+        if (empty($userId)) {
+            echo json_encode(['status' => 'error', 'message' => 'Please enter Employee ID or Student ID']);
+            exit;
+        }
+
+        // 1. 先查詢 Students 表 (使用 S_Student_No)
+        $stmt = $pdo->prepare("
+            SELECT S_Id as Id, 'Student' as Table_Type, S_Status as Status, 
+                   S_English_Name as English_Name, 'student' as Role 
+            FROM Students 
+            WHERE S_Student_No = :userId 
+            LIMIT 1
+        ");
+        $stmt->execute([':userId' => $userId]);
+        $user = $stmt->fetch();
+
+        // 2. 若非學生，則查詢 Employees 表 (使用 E_Emp_No)
+        if (!$user) {
+            $stmt = $pdo->prepare("
+                SELECT E_Id as Id, 'Employee' as Table_Type, E_Status as Status, 
+                       E_English_Name as English_Name, 'employee' as Role 
+                FROM Employees 
+                WHERE E_Emp_No = :userId 
+                LIMIT 1
+            ");
+            $stmt->execute([':userId' => $userId]);
+            $user = $stmt->fetch();
+        }
+
+        // 3. ID 不存在
+        if (!$user) {
+            echo json_encode(['status' => 'error', 'message' => 'Invalid Employee ID or Student ID']);
+            exit;
+        }
+
+        // 4. 檢查帳號是否遭停用
+        if (isset($user['Status']) && $user['Status'] === 'Disabled') {
+            echo json_encode(['status' => 'error', 'message' => 'This account has been disabled. Please contact the administrator.']);
+            exit;
+        }
+
+        // 5. 登入成功：寫入 Session
+        $_SESSION['user'] = [
+            'User_Id'      => $user['Id'],
+            'English_Name' => $user['English_Name'],
+            'Role'         => $user['Role']
+        ];
+
+        echo json_encode([
+            'status' => 'success', 
+            'user'   => $_SESSION['user']
+        ]);
+        break;
+        
     default:
-        echo json_encode(['status' => 'error', 'message' => '無效的操作指令']);
+        echo json_encode(['status' => 'error', 'message' => 'Invalid action']);
         break;
 }
