@@ -37,6 +37,12 @@ function switchTab(element, titleName) {
         }
     }
 
+    // 當點擊側邊欄的 Pending Approval 時，直接導向帶有 tab=approval 的 PHP 頁面
+    if (titleName === 'Pending Approval') {
+        location.href = 'index.php?tab=approval';
+        return;
+    }
+
     const contentDiv = document.getElementById('sectionContent');
     if (titleName === 'Requests') {
         contentDiv.innerHTML = `
@@ -63,3 +69,4 @@ function switchTab(element, titleName) {
 function handleSearch(keyword) {
     console.log("Searching for:", keyword);
 }
+

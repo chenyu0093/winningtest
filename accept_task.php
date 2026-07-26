@@ -23,6 +23,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // 直接抓取 session.php 裡對應好的真實登入編號
     $emp_no = $logged_in_emp_no; 
 
+    // 檢查是不是從「指派」懸浮視窗送過來的（帶有 T_AP 參數）
+    if (isset($_POST['T_AP']) && !empty($_POST['T_AP']) && $t_id) {
+        $selected_ap = $_POST['T_AP'];
+        
+        $sql = "UPDATE requests 
+                SET T_AP = :ap, 
+                    T_Appoint_Id = :appoint, 
+                    T_Updated_At = NOW() 
+                WHERE T_Id = :t_id";
+        
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute([
+            ':ap' => $selected_ap,
+            ':appoint' => $emp_no,
+            ':t_id' => $t_id
+        ]);
+
+        header("Location: index.php?tab=unassigned");
+        exit;
+    }
+    
+    // 原本的「接收」按鈕邏輯
     if ($t_id) {
         $sql = "UPDATE requests 
                 SET T_Receiver_Id = :emp_no, 
@@ -38,6 +60,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-header("Location: index.php");
+// 這裡改成直接跳轉到 Pending Approval 分頁
+header("Location: index.php?tab=approval");
 exit;
 ?>
