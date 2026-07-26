@@ -37,7 +37,7 @@ switch ($action) {
 
         // 寫入對應 requests 資料表
         $insertStmt = $pdo->prepare("
-            INSERT INTO requests (T_Ticket_No, T_Requester_Id, T_Category, T_Title, T_Description, T_Priority, T_Status)
+            INSERT INTO requests (T_Ticket_No, T_Requester_Id, T_Category, T_Title, T_Description, T_Priority, T_AP)
             VALUES (:ticket_no, :requester_id, :category, :title, :description, :priority, :status)
         ");
         $insertStmt->execute([

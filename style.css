@@ -1095,3 +1095,33 @@ th {
 
 .bg-pending { background: #e0a800; }
 .bg-notice { background: #17a2b8; }
+
+/* --- Gmail 風格分頁籤樣式 --- */
+.gmail-tabs {
+    display: flex;
+    border-bottom: 2px solid #e0e0e0;
+    margin-bottom: 20px;
+    background-color: transparent;
+}
+.gmail-tab-item {
+    padding: 10px 24px;
+    text-decoration: none;
+    color: #5f6368;
+    font-weight: 500;
+    font-size: 15px;
+    border-bottom: 3px solid transparent;
+    margin-bottom: -2px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.2s;
+}
+.gmail-tab-item:hover {
+    background-color: rgba(0, 0, 0, 0.04);
+    color: #1a73e8;
+}
+.gmail-tab-item.active {
+    color: #1a73e8;
+    border-bottom-color: #1a73e8;
+    font-weight: 600;
+}

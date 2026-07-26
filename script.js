@@ -26,6 +26,17 @@ function switchTab(element, titleName) {
     document.getElementById('sectionTitle').innerText = `${titleName} Management & View`;
     document.getElementById('searchInput').value = ''; 
     
+    // 取得「待接收/已接收/待指派」分頁籤容器
+    const gmailTabs = document.querySelector('.gmail-tabs');
+    
+    if (gmailTabs) {
+        if (titleName === 'Inbox') {
+            gmailTabs.style.display = 'flex';
+        } else {
+            gmailTabs.style.display = 'none';
+        }
+    }
+
     const contentDiv = document.getElementById('sectionContent');
     if (titleName === 'Requests') {
         contentDiv.innerHTML = `
@@ -39,10 +50,12 @@ function switchTab(element, titleName) {
             </div>
             <button class="submit-btn">Submit Request</button>
         `;
-    } else {
+    } else if (titleName !== 'Inbox') {
         contentDiv.innerHTML = `
             <p style="color: #666; font-size: 14px;">No data records available for "${titleName}".</p>
         `;
+    } else {
+        location.href = 'index.php?tab=pending';
     }
 }
 
